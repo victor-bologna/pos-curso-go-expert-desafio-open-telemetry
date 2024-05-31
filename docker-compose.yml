@@ -1,0 +1,74 @@
+services:
+  # Jaeger
+  jaeger-all-in-one:
+    image: jaegertracing/all-in-one:latest
+    restart: always
+    ports:
+      - "16686:16686"
+      - "14268"
+      - "14250"
+    networks:
+      - weather
+  # Zipkin
+  zipkin-all-in-one:
+    image: openzipkin/zipkin:latest
+    restart: always
+    ports:
+      - "9411:9411"
+    networks:
+      - weather
+  # Collector
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib
+    restart: always
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
+    ports:
+      - 1888:1888 # pprof extension
+      - 8888:8888 # Prometheus metrics exposed by the Collector
+      - 8889:8889 # Prometheus exporter metrics
+      - 13133:13133 # health_check extension
+      - 4317:4317 # OTLP gRPC receiver
+      - 55679:55679 # zpages extension
+    depends_on:
+      - jaeger-all-in-one
+      - zipkin-all-in-one
+    networks:
+      - weather
+  # Service A
+  service-a:
+    container_name: weather-service-a
+    restart: always
+    build:
+      dockerfile: Dockerfile
+      context: ./service-a
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=otel-collector:4317
+      - DEMO_SERVER_ENDPOINT=http://service-a:8080/
+    ports:
+      - "8080:8080"
+    depends_on:
+      - jaeger-all-in-one
+      - otel-collector
+    networks:
+      - weather
+  # Service B
+  service-b:
+    container_name: weather-service-b
+    restart: always
+    build:
+      dockerfile: Dockerfile
+      context: ./service-b
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=otel-collector:4317
+      - DEMO_SERVER_ENDPOINT=http://service-b:8081/
+    ports:
+      - "8081:8081"
+    depends_on:
+      - jaeger-all-in-one
+      - otel-collector
+    networks:
+      - weather
+networks:
+  weather:
