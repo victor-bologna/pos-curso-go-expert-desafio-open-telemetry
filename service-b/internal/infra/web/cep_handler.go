@@ -2,7 +2,9 @@ package web
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/victor-bologna/pos-curso-go-expert-desafio-open-telemetry-b/internal/usecase"
 	"go.opentelemetry.io/contrib/bridges/otelslog"
@@ -52,7 +54,7 @@ func GetTempByCep(w http.ResponseWriter, r *http.Request) {
 	response, err := WeatherService.Execute(ctx, cep)
 
 	if err != nil {
-		if err.Error() == "can not find zipcode" {
+		if strings.Contains(fmt.Sprint(err), "can not find zipcode") {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}

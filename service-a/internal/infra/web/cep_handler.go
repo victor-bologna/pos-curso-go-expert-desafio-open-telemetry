@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/victor-bologna/pos-curso-go-expert-desafio-open-telemetry-a/internal/usecase"
 	"go.opentelemetry.io/contrib/bridges/otelslog"
@@ -38,17 +39,16 @@ func GetTempByCep(w http.ResponseWriter, r *http.Request) {
 	logger.Info("Sending CEP " + cep + " to Service B")
 
 	response, err := WeatherService.Execute(ctx, cep)
-
-	logger.Info("City: " + response.City + ", Temperature in C: " + fmt.Sprintf("%f", response.Temp_C))
-
 	if err != nil {
-		if err.Error() == "can not find zipcode" {
+		if strings.Contains(fmt.Sprint(err), "can not find zipcode") {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	logger.Info("City: " + response.City + ", Temperature in C: " + fmt.Sprintf("%f", response.Temp_C))
 
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {

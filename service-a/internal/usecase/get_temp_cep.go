@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 
@@ -24,7 +25,7 @@ type OutputTempDTO struct {
 }
 
 func (ws WeatherService) Execute(ctx context.Context, cep string) (OutputTempDTO, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", "http://service-b:8081/temperature?cep="+cep, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", "http://localhost:8081/temperature?cep="+cep, nil)
 	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
 	if err != nil {
 		return OutputTempDTO{}, err
@@ -36,6 +37,9 @@ func (ws WeatherService) Execute(ctx context.Context, cep string) (OutputTempDTO
 	reader, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return OutputTempDTO{}, err
+	}
+	if resp.StatusCode == http.StatusNotFound {
+		return OutputTempDTO{}, errors.New("can not find zipcode")
 	}
 
 	var outputTempDTO OutputTempDTO

@@ -17,6 +17,8 @@ func (m MockWeatherService) Execute(cep string) (OutputTempDTO, error) {
 			Temp_F: 68.0,
 			Temp_K: 293.15,
 		}, nil
+	} else if cep == "99999999" {
+		return OutputTempDTO{}, errors.New("can not find zipcode")
 	}
 	return OutputTempDTO{}, errors.New("invalid cep")
 }
@@ -36,5 +38,11 @@ func TestWeatherService_Execute(t *testing.T) {
 	t.Run("invalid cep", func(t *testing.T) {
 		_, err := mockService.Execute("invalid")
 		assert.Error(t, err)
+	})
+
+	t.Run("can not find zipcode", func(t *testing.T) {
+		_, err := mockService.Execute("99999999")
+		assert.Error(t, err)
+		assert.Equal(t, "can not find zipcode", err.Error())
 	})
 }
