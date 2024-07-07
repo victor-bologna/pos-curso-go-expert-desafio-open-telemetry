@@ -25,7 +25,7 @@ type OutputTempDTO struct {
 }
 
 func (ws WeatherService) Execute(ctx context.Context, cep string) (OutputTempDTO, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", "http://localhost:8081/temperature?cep="+cep, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", "http://service-b:8081/temperature?cep="+cep, nil)
 	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
 	if err != nil {
 		return OutputTempDTO{}, err
